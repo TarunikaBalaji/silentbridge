@@ -1,274 +1,251 @@
-# 🤟 SilentBridge
-### Real-time Bidirectional Sign Language ↔ Speech Interpreter
+🤟 SilentBridge
+Real-time Bidirectional Sign Language ↔ Speech Interpreter
 
-> **Gemini Live Agent Challenge** · **Live Agent Category** · #GeminiLiveAgentChallenge
 
-[![Deploy to Cloud Run](https://img.shields.io/badge/Deploy-Cloud%20Run-4285F4?logo=google-cloud)](https://cloud.google.com/run)
-[![Powered by Gemini](https://img.shields.io/badge/Powered%20by-Gemini%202.0-8B5CF6?logo=google)](https://aistudio.google.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
----
 
-## The Problem
 
-**70 million deaf people** worldwide use sign language as their primary language. In most everyday interactions with hearing people — doctors, shops, strangers, workplaces — there is no interpreter available. Existing solutions require typing (slow) or a professional interpreter (expensive). Real-time, zero-friction sign language interpretation did not exist before AI made it possible.
 
-**SilentBridge solves this.**
 
----
 
-## Demo Video
 
-[![SilentBridge Demo](https://img.shields.io/badge/Watch-Demo%20Video-FF0000?logo=youtube)](YOUR_YOUTUBE_URL_HERE)
 
-> Replace `YOUR_YOUTUBE_URL_HERE` with your YouTube demo link after recording.
+AI-powered communication bridge between deaf and hearing individuals, enabling real-time sign language ↔ speech interaction using Gemini Live multimodal AI.
 
----
+Built for the Gemini Live Agent Challenge.
 
-## Try It Live
+🏆 Gemini Live Agent Challenge
 
-🚀 **[Live App](YOUR_FIREBASE_URL_HERE)** · **[API Docs](YOUR_CLOUD_RUN_URL/docs)**
+Category: Live Agents
+Focus: Real-time multimodal AI interaction
 
----
+SilentBridge demonstrates how Gemini Live API can enable natural, real-time human communication across accessibility barriers.
 
-## How It Works
+🌍 The Problem
 
-### Flow 1 — Deaf → Hearing
-```
-[Deaf user signs] → [Webcam] → [Browser captures frames @ 1fps]
-  → [WebSocket to Cloud Run] → [google-genai SDK]
-  → [Gemini Live API interprets sign language]
-  → [English text → Web Speech TTS]
-  → [Hearing person hears the translation]
-```
+Over 70 million deaf people worldwide rely on sign language as their primary language.
 
-### Flow 2 — Hearing → Deaf
-```
-[Hearing person speaks] → [Web Speech Recognition STT]
-  → [POST to Cloud Run /simplify] → [Gemini 2.0 Flash]
-  → [Plain English simplification]
-  → [Displayed as clear text for deaf user to read]
-```
+In everyday situations—doctor visits, workplaces, shops, public services—there is rarely a sign language interpreter available.
 
----
+Existing solutions have major limitations:
 
-## Architecture
+• Typing communication is slow and unnatural
+• Professional interpreters are expensive and rarely available
+• Most apps do not support real-time interaction
+• Communication remains difficult in spontaneous situations
 
-![Architecture Diagram](architecture/diagram.html)
+Real-time seamless communication between deaf and hearing people has remained a major accessibility challenge.
 
-See `architecture/diagram.html` for the full interactive diagram.
+💡 The Solution
 
-```
-┌─────────────────┐         ┌──────────────────────────┐         ┌─────────────────┐
-│  DEAF USER      │         │  GOOGLE CLOUD RUN         │         │  HEARING USER   │
-│                 │         │                           │         │                 │
-│  📷 Webcam      │─frames─▶│  FastAPI Backend          │─text───▶│  📺 Screen      │
-│  🌐 Browser     │◀─text───│  google-genai SDK         │◀─speech─│  🌐 Browser     │
-│  🔊 TTS output  │         │  Gemini Live API          │         │  🎤 Microphone  │
-└─────────────────┘         │  Gemini 2.0 Flash         │         └─────────────────┘
-                            └──────────────────────────┘
-                                       │
-                            ┌──────────────────────────┐
-                            │  Firebase Hosting         │
-                            │  Frontend (index.html)    │
-                            └──────────────────────────┘
-```
+SilentBridge provides a real-time AI communication bridge.
 
----
+It enables bidirectional conversation between deaf and hearing individuals:
 
-## Tech Stack
+Sign Language → Speech
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| AI — Sign interpretation | **Gemini Live API** (`gemini-2.0-flash-exp`) | Real-time multimodal video → text |
-| AI — Speech simplification | **Gemini 2.0 Flash** | Simplify hearing person's speech |
-| AI SDK | **google-generativeai** + **google-genai** (official) | Required SDK per hackathon rules |
-| Backend | **FastAPI** on **Google Cloud Run** | WebSocket proxy + REST API |
-| Frontend | Vanilla HTML/CSS/JS | Zero dependencies, instant load |
-| Speech output | **Web Speech API** (browser) | Free TTS — speaks translations aloud |
-| Speech input | **Web Speech Recognition** (browser) | Free STT — transcribes hearing person |
-| Frontend hosting | **Firebase Hosting** | Google Cloud, free Spark plan |
-| CI/CD | **GitHub Actions** | Auto-deploy on push to main |
+The system observes hand gestures using a webcam and uses Gemini Live multimodal reasoning to translate gestures into spoken English.
 
----
+Speech → Simplified Text
 
-## Mandatory Requirements ✅
+Spoken language is converted into text and simplified using Gemini 2.0 Flash, making it easier for deaf users to read.
 
-| Requirement | Status | How |
-|------------|--------|-----|
-| Gemini model | ✅ | `gemini-2.0-flash-exp` (Live) + `gemini-2.0-flash` (REST) |
-| Google GenAI SDK | ✅ | `google-generativeai` + `google-genai` in `backend/main.py` |
-| Gemini Live API | ✅ | WebSocket session via `client.aio.live.connect()` |
-| Hosted on Google Cloud | ✅ | Cloud Run backend + Firebase Hosting frontend |
-| Live Agent category | ✅ | Real-time vision + audio, handles continuous stream |
-| Multimodal (beyond text) | ✅ | Video in → text out → speech out |
-| Barge-in / interruption | ✅ | Live API handles interruptions natively |
+All interactions happen live in real time.
 
----
+🎬 Demo Video
 
-## Bonus Points ✅
+👉 (Add your YouTube demo link here)
 
-| Bonus | Status |
-|-------|--------|
-| Blog post / dev content | 📝 See `docs/blog-post.md` — publish to dev.to |
-| Automated deployment | ✅ `deploy.sh` + `.github/workflows/deploy.yml` |
-| GDG membership | 🔗 Add your GDG profile link here |
+The demo shows:
 
----
+• real-time sign language interpretation
+• speech-to-text communication
+• multimodal AI interaction
+• full bidirectional communication flow
 
-## Project Structure
+🚀 Try It Out
 
-```
+GitHub Repository:
+
+https://github.com/TarunikaBalaji/silentbridge
+
+The project can be run locally following the instructions below.
+
+⚙️ How It Works
+Flow 1 — Deaf → Hearing
+Deaf user signs
+↓
+Webcam captures gestures
+↓
+Frames streamed to backend
+↓
+FastAPI server on Google Cloud Run
+↓
+Gemini Live API interprets gestures
+↓
+Text generated
+↓
+Web Speech API converts text to speech
+↓
+Hearing user hears translation
+Flow 2 — Hearing → Deaf
+Hearing user speaks
+↓
+Web Speech Recognition converts speech to text
+↓
+Text sent to backend
+↓
+Gemini 2.0 Flash simplifies the language
+↓
+Clear text displayed
+↓
+Deaf user reads the response
+
+
+┌─────────────────────────┐         ┌──────────────────────────────┐         ┌──────────────────────┐
+│     DEAF USER SIDE      │         │     GOOGLE CLOUD RUN          │         │   HEARING USER SIDE  │
+│                         │         │                               │         │                      │
+│  📷 Webcam              │─frames──▶  FastAPI Backend              │──text──▶│  📺 Screen display   │
+│  Canvas API (1fps JPEG) │         │  google-genai SDK (official)  │         │                      │
+│                         │◀─text───│  ┌────────────────────────┐  │◀─speech─│  🎤 Microphone       │
+│  🔊 Web Speech TTS      │         │  │  Gemini Live API        │  │         │  Web Speech STT      │
+│     speaks aloud        │         │  │  gemini-2.0-flash-exp   │  │         │                      │
+└─────────────────────────┘         │  └────────────────────────┘  │         └──────────────────────┘
+                                    │  ┌────────────────────────┐  │
+                                    │  │  Gemini 2.0 Flash       │  │
+                                    │  │  Speech simplification  │  │
+                                    │  └────────────────────────┘  │
+                                    └──────────────────────────────┘
+                                                    │
+                                    ┌──────────────────────────────┐
+                                    │     Firebase Hosting          │
+                                    │     frontend/index.html       │
+                                    └──────────────────────────────┘
+                                    
+Architecture diagram available at:
+
+architecture/diagram.html
+
+🧠 Key Features
+
+• Real-time sign language interpretation
+• Bidirectional communication (sign ↔ speech)
+• Multimodal AI reasoning with Gemini
+• Browser-based interaction (no installation required)
+• Accessible communication for deaf and hearing users
+• Lightweight and deployable on cloud infrastructure
+
+🛠 Tech Stack
+Layer	Technology	Purpose
+AI — Sign interpretation	Gemini Live API	Real-time multimodal gesture interpretation
+AI — Speech processing	Gemini 2.0 Flash	Simplifies spoken responses
+AI SDK	google-genai / google-generativeai	Official Google AI SDK
+Backend	FastAPI	Handles API requests and streaming
+Hosting	Google Cloud Run	Serverless backend hosting
+Frontend	HTML / CSS / JavaScript	Lightweight browser interface
+Speech output	Web Speech API	Text-to-speech
+Speech input	Web Speech Recognition	Speech-to-text
+Frontend hosting	Firebase Hosting	Static hosting
+CI/CD	GitHub Actions	Automated deployment pipeline
+☁️ Google Cloud Usage
+
+SilentBridge leverages multiple Google Cloud technologies:
+
+• Gemini Live API — real-time multimodal gesture interpretation
+• Gemini 2.0 Flash — speech processing and simplification
+• Google GenAI SDK — AI integration layer
+• Cloud Run — backend deployment
+• Firebase Hosting — frontend hosting
+
+These services enable scalable, real-time AI communication.
+
+📂 Project Structure
 silentbridge/
 ├── frontend/
-│   └── index.html              ← Full app (single file, zero deps)
+│   └── index.html
 ├── backend/
-│   ├── main.py                 ← FastAPI + google-genai SDK
-│   ├── requirements.txt        ← Python dependencies
-│   └── Dockerfile              ← Cloud Run container
+│   ├── main.py
+│   ├── requirements.txt
+│   └── Dockerfile
 ├── architecture/
-│   └── diagram.html            ← System architecture diagram
+│   └── diagram.html
 ├── docs/
-│   └── blog-post.md            ← Dev.to blog post (publish for +0.6 pts)
-├── .github/
-│   └── workflows/
-│       └── deploy.yml          ← GitHub Actions CI/CD pipeline
-├── firebase.json               ← Firebase Hosting config
-├── deploy.sh                   ← One-command automated deploy
-├── .env.example                ← Environment variables template
-└── README.md                   ← This file
-```
+│   └── blog-post.md
+├── .github/workflows/
+│   └── deploy.yml
+├── firebase.json
+├── deploy.sh
+├── .env.example
+└── README.md
+▶️ Quick Start
+1 Clone the repository
+git clone https://github.com/TarunikaBalaji/silentbridge.git
+cd silentbridge
+2 Install dependencies
+pip install -r backend/requirements.txt
+3 Add your Gemini API key
+export GEMINI_API_KEY=your_api_key
 
----
+You can obtain an API key from:
 
-## Quick Start (Local Development)
+https://aistudio.google.com
 
-### Prerequisites
-- Python 3.11+
-- Google Chrome (for Web Speech API)
-- Free Gemini API key from [aistudio.google.com](https://aistudio.google.com)
+4 Run the backend
+python backend/main.py
+5 Open the frontend
 
-### 1. Get your free API key
-```bash
-# Go to https://aistudio.google.com → Get API Key → Create API key
-```
+Open the file:
 
-### 2. Run backend locally
-```bash
-cd backend
-pip install -r requirements.txt
-export GEMINI_API_KEY="your-key-here"
-python main.py
-# Server starts at http://localhost:8080
-```
+frontend/index.html
 
-### 3. Open frontend
-```bash
-# Option A: Open directly
-open frontend/index.html
+in your browser.
 
-# Option B: Serve with Python
-cd frontend && python3 -m http.server 3000
-# Open http://localhost:3000
-```
+Allow camera and microphone permissions.
 
-### 4. Configure the app
-- In the yellow config banner, enter `http://localhost:8080` as backend URL
-- Click Save, then Start Session
+🧪 How to Test the Project
 
----
+Open the application in your browser
 
-## Deploy to Google Cloud (Production)
+Allow camera and microphone access
 
-### One-command deploy
-```bash
-export GEMINI_API_KEY="your-gemini-api-key"
-chmod +x deploy.sh
-./deploy.sh
-```
+Perform hand gestures in front of the webcam
 
-### Manual steps
-```bash
-# 1. Deploy backend to Cloud Run
-cd backend
-gcloud run deploy silentbridge-api \
-  --source . \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --set-env-vars GEMINI_API_KEY=$GEMINI_API_KEY
+The AI interprets gestures into speech
 
-# 2. Deploy frontend to Firebase
-cd ..
-firebase deploy --only hosting
-```
+Speak into the microphone
 
-### GitHub Actions (auto-deploy)
-Set these secrets in your GitHub repo settings:
-- `GCP_PROJECT_ID` — your Google Cloud project ID
-- `GCP_SA_KEY` — service account JSON (base64 encoded)
-- `GEMINI_API_KEY` — your Gemini API key
-- `FIREBASE_TOKEN` — from `firebase login:ci`
+The system converts speech into readable text
 
-Every push to `main` automatically deploys.
+The application runs entirely locally and does not require login credentials.
 
----
+⚠️ Challenges We Faced
 
-## Google Cloud Deployment Proof
+• Interpreting sign gestures in real time
+• Managing asynchronous camera and speech streams
+• Maintaining low latency during AI inference
+• Integrating browser APIs with cloud-hosted AI services
 
-Evidence that backend runs on Google Cloud:
+📚 What We Learned
 
-1. **Health endpoint**: `GET YOUR_CLOUD_RUN_URL/health` returns:
-```json
-{
-  "status": "healthy",
-  "cloud_provider": "Google Cloud Run",
-  "sdk": "google-generativeai",
-  "model": "gemini-2.0-flash-exp"
-}
-```
+• Multimodal AI agents require streaming pipelines instead of request-response architectures
+• Gemini Live enables natural real-time human-AI interaction
+• Accessibility-focused AI can significantly improve communication equity
+• Cloud-native architectures are essential for scalable AI applications
 
-2. **Cloud Run console**: `https://console.cloud.google.com/run`
+🔮 Future Improvements
 
-3. **SDK usage in code**: See [`backend/main.py`](backend/main.py) lines using `google.generativeai` and `google.genai`
+• Support for additional sign languages (ISL, BSL, etc.)
+• Higher-accuracy gesture recognition models
+• Mobile applications for Android and iOS
+• Persistent conversation memory
+• Domain-specific vocabulary support for healthcare and education
 
----
+📜 License
 
-## Cost Breakdown
+MIT License
 
-| Resource | Free Tier | Cost |
-|----------|-----------|------|
-| Gemini API | AI Studio free key | $0 |
-| Cloud Run | 2M requests/month free | $0 |
-| Firebase Hosting | 10GB/month free (Spark) | $0 |
-| Web Speech API | Browser-native | $0 |
-| **Total** | | **$0** |
+🏆 Built For
 
----
+Gemini Live Agent Challenge
 
-## Findings & Learnings
-
-- **Gemini Live API** excels at continuous visual interpretation — its streaming architecture eliminates the latency of request-response cycles, making real-time sign language interpretation genuinely feasible
-- **Frame rate** of ~1fps is sufficient for sign language recognition while keeping API costs minimal
-- **Web Speech API** provides surprisingly high-quality TTS with no cost or setup — a perfect complement to Gemini's text output
-- **WebSocket proxying** through Cloud Run (rather than direct browser → Gemini connections) is necessary to satisfy the SDK requirement and enables future features like conversation context, authentication, and logging
-- The bidirectional nature of the app required careful async architecture — `asyncio.gather()` for concurrent send/receive loops was essential
-
----
-
-## Future Roadmap
-
-- **MediaPipe hand landmark overlay** — visual feedback showing detected hand positions
-- **ISL / BSL support** — extend beyond American Sign Language
-- **Conversation memory** — Firestore to persist conversation context
-- **Custom vocabulary** — domain-specific signs for medical, legal, educational contexts
-- **Mobile app** — Flutter wrapper for iOS/Android
-
----
-
-## License
-
-MIT License — see [LICENSE](LICENSE)
-
----
-
-*Built for the Gemini Live Agent Challenge · #GeminiLiveAgentChallenge*
+#GeminiLiveAgentChallenge
