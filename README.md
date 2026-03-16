@@ -8,8 +8,6 @@ Real-time Bidirectional Sign Language ↔ Speech Interpreter
 
 
 
-
-
 AI-powered communication bridge between deaf and hearing individuals, enabling real-time sign language ↔ speech interaction using Gemini Live multimodal AI.
 
 Built for the Gemini Live Agent Challenge.
@@ -101,28 +99,12 @@ Clear text displayed
 ↓
 Deaf user reads the response
 
-
-┌─────────────────────────┐         ┌──────────────────────────────┐         ┌──────────────────────┐
-│     DEAF USER SIDE      │         │     GOOGLE CLOUD RUN          │         │   HEARING USER SIDE  │
-│                         │         │                               │         │                      │
-│  📷 Webcam              │─frames──▶  FastAPI Backend              │──text──▶│  📺 Screen display   │
-│  Canvas API (1fps JPEG) │         │  google-genai SDK (official)  │         │                      │
-│                         │◀─text───│  ┌────────────────────────┐  │◀─speech─│  🎤 Microphone       │
-│  🔊 Web Speech TTS      │         │  │  Gemini Live API        │  │         │  Web Speech STT      │
-│     speaks aloud        │         │  │  gemini-2.0-flash-exp   │  │         │                      │
-└─────────────────────────┘         │  └────────────────────────┘  │         └──────────────────────┘
-                                    │  ┌────────────────────────┐  │
-                                    │  │  Gemini 2.0 Flash       │  │
-                                    │  │  Speech simplification  │  │
-                                    │  └────────────────────────┘  │
-                                    └──────────────────────────────┘
-                                                    │
-                                    ┌──────────────────────────────┐
-                                    │     Firebase Hosting          │
-                                    │     frontend/index.html       │
-                                    └──────────────────────────────┘
                                     
-Architecture diagram available at:
+## Architecture
+
+See the architecture diagram in the repository:
+
+architecture/diagram.html
 
 architecture/diagram.html
 
