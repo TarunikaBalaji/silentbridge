@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SilentBridge — Real-time Sign Language Interpreter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080c10;
+  --surface: #0d1219;
+  --surface2: #131c26;
+  --border: rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.12);
+  --accent: #00c896;
+  --accent2: #0084ff;
+  --accent3: #a855f7;
+  --text: #e8f0f8;
+  --muted: #4a6275;
+  --muted2: #6b8499;
+  --danger: #ff4f6a;
+  --warn: #f59e0b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Subtle background grid */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,200,150,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,200,150,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─── HEADER ─── */
+header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(8,12,16,0.95);
+  backdrop-filter: blur(12px);
+  flex-shrink: 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.logo-text span { color: var(--accent); }
+
+.header-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 4px;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.badge-gemini {
+  background: rgba(168,85,247,0.15);
+  border: 1px solid rgba(168,85,247,0.3);
+  color: #c084fc;
+}
+
+.badge-live {
+  background: rgba(0,200,150,0.1);
+  border: 1px solid rgba(0,200,150,0.25);
+  color: var(--accent);
+}
+
+.connection-status {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: all 0.3s;
+}
+.status-dot.connecting { background: var(--warn); animation: blink 1s ease-in-out infinite; }
+.status-dot.connected { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.status-dot.error { background: var(--danger); }
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ─── API KEY SETUP BANNER ─── */
+#setup-banner {
+  position: relative;
+  z-index: 10;
+  background: rgba(245,158,11,0.08);
+  border-bottom: 1px solid rgba(245,158,11,0.2);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+#setup-banner.hidden { display: none; }
+.setup-label { color: var(--warn); font-weight: 500; }
+#api-key-input {
+  flex: 1;
+  max-width: 420px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+}
+#api-key-input:focus { border-color: var(--warn); }
+#api-key-input::placeholder { color: var(--muted); }
+
+/* ─── MAIN LAYOUT ─── */
+main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+}
+
+/* ─── PANELS ─── */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px;
+  overflow: hidden;
+}
+
+.panel.left {
+  border-right: 1px solid var(--border);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-indicator {
+  width: 3px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.panel.right .panel-indicator { background: var(--accent2); }
+
+.panel-title {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted2);
+}
+
+.panel-subtitle {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+/* ─── VIDEO ─── */
+.video-container {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  aspect-ratio: 16/9;
+  flex-shrink: 0;
+}
+
+#webcam {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scaleX(-1); /* mirror for natural feel */
+}
+
+.video-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface);
+}
+
+.video-overlay.hidden { display: none; }
+
+.video-placeholder-icon { font-size: 40px; opacity: 0.3; }
+.video-placeholder-text { font-size: 12px; color: var(--muted); }
+
+/* Scanning line animation when active */
+.scan-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: scan 3s ease-in-out infinite;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.scan-line.active { opacity: 1; }
+@keyframes scan {
+  0% { top: 0%; }
+  100% { top: 100%; }
+}
+
+/* Corner brackets on video */
+.video-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: var(--accent);
+  border-style: solid;
+  opacity: 0.6;
+}
+.video-corner.tl { top: 10px; left: 10px; border-width: 2px 0 0 2px; }
+.video-corner.tr { top: 10px; right: 10px; border-width: 2px 2px 0 0; }
+.video-corner.bl { bottom: 10px; left: 10px; border-width: 0 0 2px 2px; }
+.video-corner.br { bottom: 10px; right: 10px; border-width: 0 2px 2px 0; }
+
+/* ─── TRANSLATION OUTPUT ─── */
+.translation-card {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.translation-card-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.translation-main {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+#translation-text {
+  transition: all 0.2s;
+}
+
+#translation-text.flash {
+  color: var(--accent);
+}
+
+.translation-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.speaking-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.speaking-indicator.active { opacity: 1; }
+.speaking-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+.speaking-bars span {
+  width: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  animation: soundbar 0.6s ease-in-out infinite;
+}
+.speaking-bars span:nth-child(1) { animation-delay: 0s; }
+.speaking-bars span:nth-child(2) { animation-delay: 0.15s; }
+.speaking-bars span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes soundbar {
+  0%,100%{ height: 3px; }
+  50%{ height: 12px; }
+}
+
+/* ─── CONTROLS ─── */
+.controls-row {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+button {
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #000;
+}
+.btn-primary:hover { background: #00e0aa; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { background: #0a2e26; color: #1a5e46; cursor: not-allowed; transform: none; }
+
+.btn-secondary {
+  background: var(--surface2);
+  color: var(--muted2);
+  border: 1px solid var(--border2);
+}
+.btn-secondary:hover { background: var(--surface); color: var(--text); }
+.btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-blue {
+  background: rgba(0,132,255,0.15);
+  color: #60aaff;
+  border: 1px solid rgba(0,132,255,0.25);
+}
+.btn-blue:hover { background: rgba(0,132,255,0.25); }
+.btn-blue.active {
+  background: var(--accent2);
+  color: #fff;
+  border-color: var(--accent2);
+  animation: mic-pulse 2s ease-in-out infinite;
+}
+@keyframes mic-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,132,255,0.3)} 50%{box-shadow:0 0 0 8px rgba(0,132,255,0)} }
+
+.btn-danger {
+  background: rgba(255,79,106,0.1);
+  color: var(--danger);
+  border: 1px solid rgba(255,79,106,0.2);
+}
+.btn-danger:hover { background: rgba(255,79,106,0.2); }
+.btn-danger:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ─── RIGHT PANEL ─── */
+.hearing-input-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  flex-shrink: 0;
+}
+
+.hearing-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.hearing-text {
+  font-size: 16px;
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 40px;
+}
+
+.hearing-text .interim { color: var(--muted2); }
+.hearing-text .final { color: var(--text); }
+
+/* ─── SIMPLIFIED CARD ─── */
+.simplified-card {
+  flex: 1;
+  background: rgba(0,132,255,0.04);
+  border: 1px solid rgba(0,132,255,0.12);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+
+.simplified-card-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(0,132,255,0.5);
+  font-weight: 500;
+}
+
+.simplified-text {
+  font-size: 24px;
+  font-weight: 600;
+  color: #60aaff;
+  letter-spacing: -0.02em;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+/* ─── LOG ─── */
+.log-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  flex-shrink: 0;
+  max-height: 72px;
+  overflow-y: auto;
+}
+
+.log-entry {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 1px 0;
+  line-height: 1.5;
+}
+.log-entry.ok { color: var(--accent); }
+.log-entry.err { color: var(--danger); }
+.log-entry.info { color: var(--muted2); }
+.log-entry.warn { color: var(--warn); }
+
+/* ─── HOW IT WORKS CARD ─── */
+.how-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 11px;
+  color: var(--muted2);
+  line-height: 1.6;
+  flex-shrink: 0;
+}
+.how-card strong { color: var(--muted2); font-weight: 500; }
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ─── FULLSCREEN DEMO HINT ─── */
+.demo-hint {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--muted);
+  background: rgba(0,0,0,0.6);
+  padding: 3px 10px;
+  border-radius: 20px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🤟</div>
+    <div class="logo-text">Silent<span>Bridge</span></div>
+  </div>
+  <div class="header-badges">
+    <span class="badge badge-gemini">Gemini 2.0</span>
+    <span class="badge badge-live">Live API</span>
+  </div>
+  <div class="connection-status">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text">Disconnected</span>
+  </div>
+</header>
+
+<!-- API KEY BANNER -->
+<div id="setup-banner">
+  <span class="setup-label">⚠ API Key Required</span>
+  <input type="password" id="api-key-input" placeholder="Paste your Gemini API key from aistudio.google.com" />
+  <button class="btn-primary" onclick="saveApiKey()" style="flex-shrink:0">Save Key</button>
+  <span style="font-size:11px;color:var(--muted);margin-left:4px">Key stays local — never sent anywhere except Google's API</span>
+</div>
+
+<!-- MAIN -->
+<main>
+
+  <!-- LEFT PANEL: Deaf user signs → agent speaks -->
+  <div class="panel left">
+
+    <div class="panel-header">
+      <div class="panel-indicator"></div>
+      <span class="panel-title">Deaf user — sign to speak</span>
+      <span class="panel-subtitle">Webcam → Gemini → Voice</span>
+    </div>
+
+    <!-- Video feed -->
+    <div class="video-container" style="flex-shrink:0">
+      <video id="webcam" autoplay muted playsinline></video>
+      <div class="scan-line" id="scan-line"></div>
+      <div class="video-corner tl"></div>
+      <div class="video-corner tr"></div>
+      <div class="video-corner bl"></div>
+      <div class="video-corner br"></div>
+      <div class="video-overlay" id="video-overlay">
+        <div class="video-placeholder-icon">📷</div>
+        <div class="video-placeholder-text">Camera will appear here</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-row">
+      <button class="btn-primary" id="startBtn" onclick="startSession()">
+        <span>▶</span> Start session
+      </button>
+      <button class="btn-danger" id="stopBtn" onclick="stopSession()" disabled>
+        <span>■</span> Stop
+      </button>
+    </div>
+
+    <!-- Translation output -->
+    <div class="translation-card">
+      <div class="translation-card-label">Interpreted translation — spoken aloud</div>
+      <div class="translation-main">
+        <span id="translation-text" style="color:var(--muted)">Waiting for signs...</span>
+      </div>
+      <div class="translation-meta">
+        <div class="speaking-indicator" id="speaking-indicator">
+          <div class="speaking-bars">
+            <span></span><span></span><span></span>
+          </div>
+          Speaking...
+        </div>
+        <span id="frame-count" style="margin-left:auto"></span>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="log-container" id="log"></div>
+
+  </div>
+
+  <!-- RIGHT PANEL: Hearing person speaks → text for deaf user -->
+  <div class="panel right">
+
+    <div class="panel-header">
+      <div class="panel-indicator"></div>
+      <span class="panel-title">Hearing person — speak to sign</span>
+      <span class="panel-subtitle">Voice → Text → Deaf user reads</span>
+    </div>
+
+    <!-- Microphone section -->
+    <div class="hearing-input-card">
+      <div class="hearing-label">Hearing person is saying</div>
+      <div class="hearing-text" id="hearing-output">
+        <span style="color:var(--muted)">Press "Listen" then speak naturally...</span>
+      </div>
+    </div>
+
+    <!-- Listen button -->
+    <div class="controls-row">
+      <button class="btn-blue" id="listenBtn" onclick="toggleListening()">
+        <span id="mic-icon">🎤</span>
+        <span id="listen-label">Listen to hearing person</span>
+      </button>
+      <button class="btn-secondary" onclick="clearHearing()">Clear</button>
+    </div>
+
+    <!-- Simplified output for deaf user -->
+    <div class="simplified-card">
+      <div class="simplified-card-label">Gemini — simplified for deaf user</div>
+      <div class="simplified-text" id="simplified-text">
+        <span style="color:rgba(0,132,255,0.3);font-size:18px">Gemini will simplify the speech here...</span>
+      </div>
+    </div>
+
+    <!-- Info card -->
+    <div class="how-card">
+      <strong>How SilentBridge works:</strong><br>
+      Left side: Deaf user signs in front of webcam → Gemini Live API interprets gestures in real-time → browser speaks the translation aloud to the hearing person.<br><br>
+      Right side: Hearing person speaks → Web Speech API transcribes → Gemini simplifies it → displayed as clear text for the deaf user to read.
+    </div>
+
+  </div>
+</main>
+
+<script>
+// ─────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────
+let API_KEY = localStorage.getItem('silentbridge_api_key') || '';
+
+if (API_KEY) {
+  document.getElementById('setup-banner').classList.add('hidden');
+  document.getElementById('api-key-input').value = API_KEY;
+}
+
+function saveApiKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val) { alert('Please enter your API key'); return; }
+  API_KEY = val;
+  localStorage.setItem('silentbridge_api_key', val);
+  document.getElementById('setup-banner').classList.add('hidden');
+  addLog('API key saved', 'ok');
+}
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+let ws = null;
+let mediaStream = null;
+let frameInterval = null;
+let recognition = null;
+let isListening = false;
+let frameCount = 0;
+let lastTranslation = '';
+
+const canvas = document.createElement('canvas');
+const ctx2d = canvas.getContext('2d');
+
+// ─────────────────────────────────────────────
+// LOGGING
+// ─────────────────────────────────────────────
+function addLog(msg, type = 'info') {
+  const el = document.getElementById('log');
+  const d = document.createElement('div');
+  d.className = `log-entry ${type}`;
+  const time = new Date().toLocaleTimeString('en', { hour12: false });
+  d.textContent = `${time}  ${msg}`;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
+  // keep log short
+  while (el.children.length > 20) el.removeChild(el.firstChild);
+}
+
+// ─────────────────────────────────────────────
+// STATUS
+// ─────────────────────────────────────────────
+function setStatus(state) {
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  dot.className = 'status-dot ' + state;
+  const labels = {
+    '': 'Disconnected',
+    connecting: 'Connecting...',
+    connected: 'Connected to Gemini Live',
+    error: 'Connection error'
+  };
+  txt.textContent = labels[state] || 'Disconnected';
+}
+
+// ─────────────────────────────────────────────
+// SESSION START
+// ─────────────────────────────────────────────
+async function startSession() {
+  if (!API_KEY) {
+    alert('Please enter your Gemini API key first (see the yellow banner above).\n\nGet a free key at: aistudio.google.com');
+    return;
+  }
+
+  document.getElementById('startBtn').disabled = true;
+  addLog('Requesting camera access...', 'info');
+
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
+      audio: false
+    });
+    const video = document.getElementById('webcam');
+    video.srcObject = mediaStream;
+    document.getElementById('video-overlay').classList.add('hidden');
+    addLog('Camera ready ✓', 'ok');
+  } catch (err) {
+    addLog('Camera error: ' + err.message, 'err');
+    document.getElementById('startBtn').disabled = false;
+    return;
+  }
+
+  setStatus('connecting');
+  addLog('Connecting to Gemini Live API...', 'info');
+
+  // Try both v1alpha and v1beta endpoints
+  const endpoints = [
+    `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${API_KEY}`,
+    `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${API_KEY}`
+  ];
+
+  tryConnect(endpoints, 0);
+}
+
+function tryConnect(endpoints, idx) {
+  if (idx >= endpoints.length) {
+    addLog('All WebSocket endpoints failed. Check your API key.', 'err');
+    setStatus('error');
+    document.getElementById('startBtn').disabled = false;
+    return;
+  }
+
+  ws = new WebSocket(endpoints[idx]);
+
+  ws.onopen = () => {
+    addLog(`WebSocket connected (endpoint ${idx + 1})`, 'ok');
+    sendSetup();
+  };
+
+  ws.onerror = () => {
+    addLog(`Endpoint ${idx + 1} failed, trying next...`, 'warn');
+    ws = null;
+    setTimeout(() => tryConnect(endpoints, idx + 1), 500);
+  };
+
+  ws.onclose = (e) => {
+    if (frameInterval) {
+      addLog(`Connection closed (code ${e.code})`, 'info');
+      setStatus('');
+      stopFrameCapture();
+      document.getElementById('scan-line').classList.remove('active');
+      document.getElementById('stopBtn').disabled = true;
+      document.getElementById('startBtn').disabled = false;
+    }
+  };
+
+  ws.onmessage = handleMessage;
+}
+
+function sendSetup() {
+  ws.send(JSON.stringify({
+    setup: {
+      model: 'models/gemini-2.0-flash-exp',
+      system_instruction: {
+        parts: [{
+          text: `You are SilentBridge, a real-time American Sign Language (ASL) interpreter.
+
+You are watching a webcam feed of a person who is deaf communicating using American Sign Language.
+
+YOUR ONLY JOB: Watch for hand signs and gestures and output the English translation.
+
+STRICT RULES:
+1. If you see clear ASL hand signs or gestures → output ONLY the English meaning. Nothing else.
+2. If the person signs a word → output that word.
+3. If the person signs a phrase/sentence → output the full phrase naturally.
+4. If no hands are visible or no signing is happening → output exactly: [waiting]
+5. DO NOT describe what you see. DO NOT say "I see hands". DO NOT explain.
+6. Keep responses SHORT: typically 1–8 words.
+7. Be decisive. If you're 60% sure of a sign, output it.
+
+Examples of CORRECT output:
+- "Hello"
+- "Thank you"
+- "My name is Sarah"
+- "I need help"
+- "Where is the bathroom"
+- "Nice to meet you"
+- [waiting]
+
+Examples of WRONG output (never do this):
+- "I can see a person making a hand gesture..."
+- "The user appears to be signing..."
+- "I'm not sure what sign this is"`
+        }]
+      },
+      generation_config: {
+        response_modalities: ['TEXT'],
+        temperature: 0.1,
+        max_output_tokens: 60
+      }
+    }
+  }));
+}
+
+// ─────────────────────────────────────────────
+// MESSAGE HANDLER
+// ─────────────────────────────────────────────
+function handleMessage(event) {
+  try {
+    const data = JSON.parse(event.data);
+
+    if (data.setupComplete) {
+      addLog('Gemini Live ready — start signing! ✓', 'ok');
+      setStatus('connected');
+      document.getElementById('stopBtn').disabled = false;
+      document.getElementById('scan-line').classList.add('active');
+      startFrameCapture();
+      return;
+    }
+
+    // Extract text from response
+    const parts = data?.serverContent?.modelTurn?.parts;
+    if (parts && parts.length > 0) {
+      const text = parts.map(p => p.text || '').join('').trim();
+      if (text && text !== '[waiting]' && text !== lastTranslation) {
+        lastTranslation = text;
+        updateTranslation(text);
+      }
+    }
+
+    // Handle interruptions / turn complete
+    if (data?.serverContent?.turnComplete) {
+      // Ready for next input
+    }
+
+  } catch (e) {
+    // Non-JSON messages (binary audio etc) — ignore
+  }
+}
+
+// ─────────────────────────────────────────────
+// TRANSLATION DISPLAY + SPEAK
+// ─────────────────────────────────────────────
+function updateTranslation(text) {
+  const el = document.getElementById('translation-text');
+  el.textContent = text;
+  el.style.color = 'var(--text)';
+
+  // Flash effect
+  el.classList.add('flash');
+  setTimeout(() => el.classList.remove('flash'), 400);
+
+  addLog(`Interpreted: "${text}"`, 'ok');
+  speakText(text);
+}
+
+function speakText(text) {
+  if (!text || text.length < 2) return;
+  window.speechSynthesis.cancel();
+
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.9;
+  u.pitch = 1.05;
+  u.volume = 1.0;
+  u.lang = 'en-US';
+
+  // Pick a clear voice if available
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = voices.find(v =>
+    v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Samantha')
+  );
+  if (preferred) u.voice = preferred;
+
+  const indicator = document.getElementById('speaking-indicator');
+  indicator.classList.add('active');
+  u.onend = () => indicator.classList.remove('active');
+  u.onerror = () => indicator.classList.remove('active');
+
+  window.speechSynthesis.speak(u);
+}
+
+// ─────────────────────────────────────────────
+// FRAME CAPTURE — sends video frames to Gemini
+// ─────────────────────────────────────────────
+function startFrameCapture() {
+  const video = document.getElementById('webcam');
+  canvas.width = 640;
+  canvas.height = 480;
+
+  frameInterval = setInterval(() => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (video.readyState < 2) return;
+
+    ctx2d.drawImage(video, 0, 0, 640, 480);
+    const base64 = canvas.toDataURL('image/jpeg', 0.65).split(',')[1];
+
+    try {
+      ws.send(JSON.stringify({
+        realtime_input: {
+          media_chunks: [{
+            mime_type: 'image/jpeg',
+            data: base64
+          }]
+        }
+      }));
+      frameCount++;
+      if (frameCount % 10 === 0) {
+        document.getElementById('frame-count').textContent = `${frameCount} frames sent`;
+      }
+    } catch (e) {
+      addLog('Frame send error: ' + e.message, 'err');
+    }
+  }, 800); // ~1.25 fps — enough for sign language, keeps cost low
+}
+
+function stopFrameCapture() {
+  if (frameInterval) {
+    clearInterval(frameInterval);
+    frameInterval = null;
+  }
+}
+
+// ─────────────────────────────────────────────
+// STOP SESSION
+// ─────────────────────────────────────────────
+function stopSession() {
+  stopFrameCapture();
+
+  if (ws) {
+    ws.onclose = null; // prevent double-log
+    ws.close();
+    ws = null;
+  }
+
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
+  }
+
+  document.getElementById('webcam').srcObject = null;
+  document.getElementById('video-overlay').classList.remove('hidden');
+  document.getElementById('scan-line').classList.remove('active');
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+  document.getElementById('frame-count').textContent = '';
+  document.getElementById('speaking-indicator').classList.remove('active');
+  window.speechSynthesis.cancel();
+  setStatus('');
+  frameCount = 0;
+  lastTranslation = '';
+  addLog('Session ended', 'info');
+}
+
+// ─────────────────────────────────────────────
+// HEARING PERSON → SPEECH TO TEXT
+// ─────────────────────────────────────────────
+function toggleListening() {
+  if (isListening) {
+    stopListening();
+    return;
+  }
+  startListening();
+}
+
+function startListening() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    alert('Speech recognition requires Google Chrome. Please open this app in Chrome.');
+    return;
+  }
+  if (!API_KEY) {
+    alert('Please enter your API key first.');
+    return;
+  }
+
+  recognition = new SR();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+  recognition.maxAlternatives = 1;
+
+  let finalTranscript = '';
+
+  recognition.onstart = () => {
+    isListening = true;
+    document.getElementById('listenBtn').classList.add('active');
+    document.getElementById('listen-label').textContent = 'Listening... (click to stop)';
+    document.getElementById('mic-icon').textContent = '🔴';
+    addLog('Microphone active', 'ok');
+  };
+
+  recognition.onresult = (e) => {
+    let interimText = '';
+    finalTranscript = '';
+
+    for (let i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript;
+      else interimText += e.results[i][0].transcript;
+    }
+
+    const output = document.getElementById('hearing-output');
+    output.innerHTML = `<span class="final">${finalTranscript}</span><span class="interim">${interimText}</span>`;
+
+    if (finalTranscript.trim()) {
+      simplifyForDeafUser(finalTranscript.trim());
+    }
+  };
+
+  recognition.onerror = (e) => {
+    addLog('Mic error: ' + e.error, 'err');
+    if (e.error === 'not-allowed') {
+      alert('Microphone permission denied. Please allow microphone access in your browser.');
+    }
+    stopListening();
+  };
+
+  recognition.onend = () => {
+    if (isListening) {
+      // Auto-restart if it stopped unexpectedly
+      try { recognition.start(); } catch(e) {}
+    }
+  };
+
+  recognition.start();
+}
+
+function stopListening() {
+  isListening = false;
+  if (recognition) {
+    recognition.onend = null;
+    recognition.stop();
+    recognition = null;
+  }
+  document.getElementById('listenBtn').classList.remove('active');
+  document.getElementById('listen-label').textContent = 'Listen to hearing person';
+  document.getElementById('mic-icon').textContent = '🎤';
+  addLog('Microphone stopped', 'info');
+}
+
+function clearHearing() {
+  document.getElementById('hearing-output').innerHTML = '<span style="color:var(--muted)">Press "Listen" then speak naturally...</span>';
+  document.getElementById('simplified-text').innerHTML = '<span style="color:rgba(0,132,255,0.3);font-size:18px">Gemini will simplify the speech here...</span>';
+}
+
+// ─────────────────────────────────────────────
+// GEMINI: SIMPLIFY SPEECH FOR DEAF USER
+// ─────────────────────────────────────────────
+async function simplifyForDeafUser(text) {
+  if (!API_KEY || !text) return;
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `A hearing person just said: "${text}"
+
+Rewrite this as a SHORT, crystal-clear message for a deaf person to read on screen.
+Rules:
+- Maximum 10 words
+- Plain simple English
+- Remove filler words (um, uh, like, you know)
+- Keep the core meaning
+- No quotes in your response
+
+Just output the simplified text. Nothing else.`
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 40
+          }
+        })
+      }
+    );
+
+    const data = await res.json();
+    const simplified = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+    if (simplified) {
+      document.getElementById('simplified-text').textContent = simplified;
+      addLog(`Simplified: "${simplified}"`, 'info');
+    }
+  } catch (err) {
+    addLog('Simplify error: ' + err.message, 'err');
+  }
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+// Preload voices for TTS
+window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+window.speechSynthesis.getVoices();
+
+addLog('SilentBridge ready. Enter API key and press Start.', 'info');
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') stopSession();
+});
+</script>
+</body>
+</html>

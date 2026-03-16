@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+env/
+*.pyc
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Node
+node_modules/
+.npm
+
+# Backend static (copied during deploy, not source-controlled)
+backend/static/
+
+# Firebase
+.firebase/
+.firebaserc.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Cloud
+.gcloud/
+service-account-key.json
+*-key.json
